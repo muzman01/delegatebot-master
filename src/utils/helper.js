@@ -13,7 +13,7 @@ export async function getDelegatorInfo() {
     let post = [] ; 
     const res = await axios.get(url);
     post= res.data.result.rows;
-    return post[post.length-1];
+    return post;
   }
   export async function getVoterAccount() { 
     const url = `https://sds.steemworld.org/accounts_api/getAccount/robiniaswap`; 
@@ -21,4 +21,5 @@ export async function getDelegatorInfo() {
     const res = await axios.get(url);
     post= res.data.result.rows;
     return post;
+    
   }

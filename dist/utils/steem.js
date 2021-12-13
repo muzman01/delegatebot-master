@@ -13,10 +13,6 @@ var _config = require("../config");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-_steem.default.api.setOptions({
-  url: _config.STEEM_API_URLS[12]
-});
-
 var _default = _steem.default;
 exports.default = _default;
 

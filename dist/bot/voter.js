@@ -17,32 +17,45 @@ var _nodeSchedule = _interopRequireDefault(require("node-schedule"));
 
 var _dsteem = _interopRequireDefault(require("../utils/dsteem"));
 
+var _request = require("request");
+
+var _axios = _interopRequireDefault(require("axios"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// ROBİA SP MİKTARI
+const hiveTx = require('hive-tx');
+
+var dsteem = require('dsteem');
+
+var steem = require('steem');
+
+var fs = require('fs');
+
 const cheerio = require('cheerio');
 
 const rp = require('request-promise');
 
-var url = 'https://steemd.com/@inven.cu02';
-rp(url).then(html => {
-  let sp = [];
-  var $ = cheerio.load(html);
-  const res = $("p:contains('SP')").text();
-  var a = res.trim();
-  var b = a.replace(",", ".");
-  sp = b.slice(0, -2); // var b = sp.substring(0,7);
-
-  var sonSp = parseFloat(sp);
-  console.log('====================================');
-  console.log(sonSp);
-  console.log('====================================');
-});
+let date_ob = new Date(); //      async function oyGucu() { 
+//     const url ='https://sds.steemworld.org/accounts_api/getAccount/inven.cu01'; 
+//     let post = [] ; 
+//     const res = await axios.get(url);
+//     post = res.data.result;
+//     var secondsago = ( date_ob.getDate() -  date_ob.getDate(post.last_vote_time + "Z")) /1000;
+//     var vpow = post.voting_power + (10000 * secondsago / 432000);
+//     vpow = Math.min(vpow/100,100).toFixed(2);
+//     var sampleObject = {vpow};
+//         fs.writeFile("./wp.json", JSON.stringify(sampleObject, null, 4), (err) => {
+//     if (err) {  console.error(err);  return; };
+//     console.log("wp kaydedildi");
+//         });
+//  }
 
 async function startVoteBot() {
-  console.log("Starting the vote bot...");
-  await calculateWeight();
-  await voteBotActivity();
+  console.log("Starting the vote bot..."); // setTimeout( oyGucu);
+  // setTimeout( getSpAmount);
+
+  setTimeout(calculateWeight, 5000);
+  setTimeout(voteBotActivity, 10000);
 }
 
 let weights = {};
@@ -55,9 +68,9 @@ async function calculateWeight() {
 
   let delSp = [list.length]; // delegate amount of users
 
-  let totalSp = 0; //total delegate amount of bot account
+  weights = {}; // const json = require('../../object.json') // voteweigth
 
-  weights = {};
+  let totalSp = 0;
 
   for (i = 0; i < list.length; i++) {
     accounts[i] = list[i][1];
@@ -69,14 +82,20 @@ async function calculateWeight() {
   }
 
   for (i = 0; i < delSp.length; i++) {
-    delSp[i] = Math.floor(delSp[i] * 15 * 100 / totalSp);
+    delSp[i] = Math.floor(delSp[i] * 15 * 100 / 1500000);
 
     if (delSp[i] > 10000) {
       delSp[i] = 10000;
     } else if (delSp[i] < 1) {
       delSp[i] = 1;
     }
-  }
+  } // for(i=0;i<accounts.length;i++){  // to see all permlinks in delagator list
+  //   let veri = getPermLink(accounts[i])
+  //   veri.then(function (result) {
+  //     console.log(result)
+  //    })
+  //  }  
+
 
   for (let k in accounts) {
     let weight = delSp[k];
@@ -84,21 +103,38 @@ async function calculateWeight() {
     weights[delegators] = weight;
   }
 
-  return accounts; // for(i=0;i<accounts.length;i++){  // to see all permlinks in delagator list
-  //  let veri = getPermLink(accounts[i])
-  //  veri.then(function (result) {
-  //    console.log(result)
-  //   })
-  // }   
-}
+  return accounts;
+} // async function getSpAmount(){
+//   var url ='https://steemd.com/@robiniaswap';
+//     rp(url).then((html)=> {
+//     let sp =[];
+//       var $ = cheerio.load(html);
+//        const res = $("p:contains('SP')").text();
+//         var a =  res.trim(  );
+//         var b = a.replace(",", ".");
+//         sp = b.slice(0, -2);
+//        // var b = sp.substring(0,7);
+//        var sonSp=parseFloat(sp);
+//        console.log('====================================');
+//        console.log(sonSp)
+//        console.log('====================================');
+//        var sampleObject = {sp};
+//     fs.writeFile("./object.json", JSON.stringify(sampleObject, null, 4), (err) => {
+//     if (err) {  console.error(err);  return; };
+//     console.log("File has been created");
+//         });
+//      })
+// }
+
 
 async function getPermLink(account) {
   try {
     let data = await (0, _helper.getLastPost)(account);
-    let permLink = data[0][4];
+    let a = data[data.length - 1];
+    let permLink = a[4];
     return permLink;
   } catch (e) {
-    return true;
+    return '6vh7yp';
   }
 }
 
@@ -134,7 +170,7 @@ async function hasVotedBy(author, permLink, voter) {
     const voters = post.active_votes.map(v => v.voter);
     return voters.includes(voter);
   } catch (e) {
-    //console.error("Fail to check whether the post has voted or not", e);
+    console.error("Fail to check whether the post has voted or not", e);
     return false;
   }
 }
@@ -159,14 +195,29 @@ async function getRecentlyVotedAuthors() {
   .map(op => op[1].op[1].author).filter(author => author !== _config.VOTE_BOT_ACCOUNT);
 }
 
-async function votePost(author, permLink, timestamp) {
+async function votePost(author, timestamp) {
   const voter = _config.VOTE_BOT_ACCOUNT;
+  const permLink = await getPermLink(author);
   const voted = await hasVotedBy(author, permLink, voter);
   const weight = getVotingWeight(author);
-  const privateKey = _config.VOTE_BOT_KEY;
+
+  const hiveTx = require('hive-tx');
+
+  const key = dsteem.PrivateKey.fromLogin(_config.VOTE_BOT_ACCOUNT, _config.VOTE_BOT_KEY, 'posting');
 
   if (!weight) {
     console.log("Skip , author is not valid stakeholder");
+    return;
+  } // if(voted){
+  //   console.log("Skip , Already voted up")
+  //   return;
+  // }
+
+
+  const postedToday = isCreatedToday(author, permLink);
+
+  if (!postedToday) {
+    console.log("Skip post is not created to day ");
     return;
   }
 
@@ -175,140 +226,167 @@ async function votePost(author, permLink, timestamp) {
     return;
   }
 
-  const postedToday = isCreatedToday(author, permLink);
-
-  if (!postedToday) {
-    console.log("Skip post is not created to day ");
-    return;
-  } // now let's vote after 3 mins 45 secs (minus 2 seconds to ensure inclusion)
-
-
-  const vote_time = new Date(new Date(timestamp).getTime() + 238 * 1000); // console.log(
-  //   "Will vote @%s/%s with weight [%s] at",
-  //   author,
-  //   permLink,
-  //   weight,
-  //   vote_time
-  // );
-
-  _dsteem.default.broadcast.vote({
-    voter,
-    author,
-    permLink,
-    weight
-  }, _config.VOTE_BOT_KEY);
-
-  console.log("Voted @%s/%s with weight = %s", author, permLink, weight); //  schedule.scheduleJob(vote_time), async () => {
-  //   try{
-  //     const alreadyVoted = await hasVotedBy(author,permLink,voter);
-  //     if(alreadyVoted){
-  //       console.log("Failed! I already voted the post @%s/%s",author,permLink)
-  //       return;
-  //     }
-  //     const votedAuthor = await hasVotedAuthorToday(author);
-  //     if(votedAuthor){
-  //       return;
-  //     }
-  //     const op = await client.broadcast.vote(
-  //       "vote",{
-  //         voter,
-  //         author,
-  //         permLink,
-  //         weight,
-  //       },
-  //       VOTE_BOT_KEY
-  //     )
-  //     console.log("Voted @%s/%s with weight = %s", author, permLink, weight)
-  //     client.broadcast.sign(op,privateKey) 
-  //   }
-  //   catch (e) {
-  //     console.error(
-  //       "Failed when vote @%s/%s with weight = %s",
-  //       author,
-  //       permLink,
-  //       weight,
-  //       e
-  //     );
-  //       if (e.jse_shortmsg=="( now - voter.last_vote_time ).to_seconds() >= STEEM_MIN_VOTE_INTERVAL_SEC: Can only vote once every 3 seconds."){
-  //       const delay_time = new Date(new Date(vote_time).getTime() + 3 * 1000);
-  //       console.log(
-  //        "2re try Will vote @%s/%s with weight [%s] at",
-  //       author,
-  //       permLink,
-  //       weight,
-  //       delay_time
-  //        );
-  //       await schedule.scheduleJob(delay_time, async () => {
-  //         try {
-  //           await client.broadcast(
-  //             "vote",
-  //             {
-  //             voter,
-  //             author,
-  //             permLink,
-  //             weight,
-  //             },
-  //             VOTE_BOT_KEY
-  //             );
-  //           console.log("2retry Voted @%s/%s with weight = %s", author, permLink, weight);
-  //         }catch (e) {
-  //           console.error(
-  //             "Failed when vote @%s/%s with weight = %s",
-  //             author,
-  //             permLink,
-  //             weight,
-  //             e
-  //           );
-  //               if (e.jse_shortmsg=="( now - voter.last_vote_time ).to_seconds() >= STEEM_MIN_VOTE_INTERVAL_SEC: Can only vote once every 3 seconds."){
-  //               const delay_time = new Date(new Date(vote_time).getTime() + 3 * 1000);
-  //               console.log(
-  //                "3re try Will vote @%s/%s with weight [%s] at",
-  //                 author,
-  //                permLink,
-  //                   weight,
-  //                 delay_time
-  //                );
-  //               await schedule.scheduleJob(delay_time, async () => {
-  //                 try {
-  //                   await client.broadcast(
-  //                     "vote",
-  //                     {
-  //                     voter,
-  //                     author,
-  //                     permLink,
-  //                     weight,
-  //                     },
-  //                     VOTE_BOT_KEY
-  //                     );
-  //                   console.log("3retry Voted @%s/%s with weight = %s", author, permLink, weight);
-  //                 }catch (e) {
-  //                   console.error(
-  //                     "3 Failed when vote @%s/%s with weight = %s",
-  //                     author,
-  //                     permLink,
-  //                     weight,
-  //                     e
-  //                   );
-  //                 }
-  //               })
-  //               }
-  //         }
+  const vote_time = new Date(new Date(timestamp).getTime() + 298 * 1000); //  hiveTx.config.node =  'https://anyx.io'
+  // const operations = [
+  //   [
+  //     'vote',
+  //     {
+  //       voter: 'inven.cu02',
+  //       author: 'mantonge',
+  //       permlink: '2a4dgg',
+  //       weight: 1000
+  //     },
+  //     key
+  //   ]
+  // ]
+  //       const myKey = '5Kj61cv8Fi1wojxgxq13PoqNABmBZqCCKKaewXTTnkLvKpFXT6J'
+  //       const privateKey = hiveTx.PrivateKey.from(myKey)
+  //       const tx = new hiveTx.Transaction()
+  //       // create transaction
+  //       tx.create(operations).then(() => {
+  //         console.log('Created transaction:', tx.transaction)
+  //         // sign the transaction
+  //         tx.sign(privateKey)
+  //         console.log('Signed transaction:', tx.signedTransaction)
+  //         // broadcast the transaction
+  //         tx.broadcast().then(res => console.log('Broadcast result:', res))
   //       })
-  //       }
-  //   }
-  // }
+  //       // get accounts
+  //       hiveTx
+  //         .call('condenser_api.get_accounts', [['inven.cu02']])
+  //         .then(res => console.log('Get accounts:', res))
+  //   // now let's vote after 3 mins 45 secs (minus 2 seconds to ensure inclusion)
+  // let category = await  getLastPost(author)
+  //  let b = category[category.length-1];
+  // let cate = b[23];
+
+  const ACC_NAME = 'inven.cu02',
+        ACC_KEY = '5Kj61cv8Fi1wojxgxq13PoqNABmBZqCCKKaewXTTnkLvKpFXT6J';
+  setInterval(() => {
+    setTimeout(() => {
+      streamVote("https://steemit.com/aaa/".concat(author, "/").concat(permLink), " 0.01 SBD");
+      console.log("Paid Voting Bot Script Running...");
+      console.log("Waiting For Transfers...");
+
+      function streamVote(url, amount) {
+        const memo = url.split('/'); // const author = memo[4].split('@')[1];
+        // const weight = calculateVotingWeight(amount);
+
+        setTimeout(function () {
+          console.log("4 sn durdu");
+        }, 4000);
+        steem.broadcast.vote(ACC_KEY, ACC_NAME, author, memo[5], weight, key, function (err, result) {
+          console.log('Voted Succesfully, permalink: ' + memo[5] + ', author: ' + author + ', weight: ' + weight / 1000 + '%.', err);
+        });
+        streamVote("https://steemit.com/life/@bigram13/more-work-more-problems", "0.01 SBD");
+        console.log("Paid Voting Bot Script Running...");
+        console.log("Waiting For Transfers...");
+        steem.api.streamTransactions("head", function (err, result) {
+          let type = result.operations[0][0];
+          let data = result.operations[0][1];
+          console.log(type, data);
+
+          if (type == "transfer" && data.to == ACC_NAME) {
+            console.log("Incoming request for vote from: " + data.from + ", value: " + data.amount + "\n\n");
+            streamVote(data.memo, data.amount);
+          }
+        });
+      }
+    }, 3000);
+  }, 5000); // steem.api.streamTransactions('head', function(err, result) {
+  //     let type = result.operations[0][0];
+  //     let data = result.operations[0][1];
+  // 		//console.log(type, data);
+  //      if(type == 'transfer' && data.to == ACC_NAME) {
+  // 			// console.log("Incoming request for vote from: " + data.from +", value: " + data.amount + "\n\n");
+  //         streamVote(data.memo, data.amount);
+  //     }
+  // });
+
+  console.log("Will vote @%s/%s with weight [%s] at", author, permLink, weight, vote_time); // client.broadcast.vote(
+  //   {
+  //     voter,
+  //     author,
+  //     permLink,
+  //     weight,
+  //   },
+  //   VOTE_BOT_KEY
+  // )
+  // console.log("Voted @%s/%s with weight = %s", author, permLink, weight)
+  //   steem.broadcast.vote(voter,key).then(
+  //     function(result) {
+  //         console.log('success:', result);
+  //     },
+  //     function(error) {
+  //         console.log('error:', error);
+  //             error.jse_shortmsg + ' - See console for full response.';
+  //     }
+  // );
 }
+
+_nodeSchedule.default.scheduleJob('42 * * * *'), async () => {
+  try {
+    const alreadyVoted = await hasVotedBy(author, permLink, voter);
+
+    if (alreadyVoted) {
+      console.log("Failed! I already voted the post @%s/%s", author, permLink);
+      return;
+    }
+
+    const votedAuthor = await hasVotedAuthorToday(author);
+
+    if (votedAuthor) {
+      return;
+    }
+  } catch (e) {
+    console.error("Failed when vote @%s/%s with weight = %s%s", author, permLink, weight, e);
+
+    if (e.jse_shortmsg == "( now - voter.last_vote_time ).to_seconds() >= STEEM_MIN_VOTE_INTERVAL_SEC: Can only vote once every 3 seconds.") {
+      const delay_time = new Date(new Date(vote_time).getTime() + 298 * 1000);
+      console.log("2re try Will vote @%s/%s with weight [%s] at", author, permLink, weight, delay_time);
+      await _nodeSchedule.default.scheduleJob(delay_time, async () => {
+        try {
+          await steem.broadcast("vote", {
+            voter,
+            author,
+            permLink,
+            weight
+          }, _config.VOTE_BOT_KEY);
+          console.log("2retry Voted @%s/%s with weight = %s", author, permLink, weight);
+        } catch (e) {
+          console.error("Failed when vote @%s/%s with weight = %s", author, permLink, weight, e);
+
+          if (e.jse_shortmsg == "( now - voter.last_vote_time ).to_seconds() >= STEEM_MIN_VOTE_INTERVAL_SEC: Can only vote once every 3 seconds.") {
+            const delay_time = new Date(new Date(vote_time).getTime() + 3 * 1000);
+            console.log("3re try Will vote @%s/%s with weight [%s] at", author, permLink, weight, delay_time);
+            await _nodeSchedule.default.scheduleJob(delay_time, async () => {
+              try {
+                await steem.broadcast("vote", {
+                  voter,
+                  author,
+                  permLink,
+                  weight
+                }, _config.VOTE_BOT_KEY);
+                console.log("3retry Voted @%s/%s with weight = %s", author, permLink, weight);
+              } catch (e) {
+                console.error("3 Failed when vote @%s/%s with weight = %s", author, permLink, weight, e);
+              }
+            });
+          }
+        }
+      });
+    }
+  }
+};
 
 async function voteBotActivity() {
   const list = await (0, _helper.getDelegatorInfo)();
   let author = 0;
   var i = 0;
-  let permLink;
 
   for (i = 0; i < list.length; i++) {
     author = list[i][1];
-    permLink = await getPermLink(author);
-    votePost(author, permLink, timestamp);
+    votePost(author, timestamp);
   }
 }
 

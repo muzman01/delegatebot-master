@@ -26,7 +26,7 @@ async function getLastPost(author) {
   let post = [];
   const res = await _axios.default.get(url);
   post = res.data.result.rows;
-  return post[post.length - 1];
+  return post;
 }
 
 async function getVoterAccount() {
