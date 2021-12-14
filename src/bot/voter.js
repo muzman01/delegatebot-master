@@ -258,90 +258,21 @@ const hiveTx = require('hive-tx')
 // let category = await  getLastPost(author)
 //  let b = category[category.length-1];
 // let cate = b[23];
-const ACC_NAME = 'inven.cu02',
-    ACC_KEY = '5Kj61cv8Fi1wojxgxq13PoqNABmBZqCCKKaewXTTnkLvKpFXT6J';
-     streamVote(`https://steemit.com/aaa/${author}/${permLink}` ,` 0.01 SBD`);
+	const ACC_NAME = 'inven.cu02',
+	    ACC_KEY = '5Kj61cv8Fi1wojxgxq13PoqNABmBZqCCKKaewXTTnkLvKpFXT6J';
+	     streamVote(`https://steemit.com/aaa/${author}/${permLink}` ,` 0.01 SBD`);
 
-console.log("Paid Voting Bot Script Running...");
-console.log("Waiting For Transfers...");
-function streamVote(url, amount) {
-	const memo = url.split('/');
-	// const author = memo[4].split('@')[1];
-	// const weight = calculateVotingWeight(amount);
-   setTimeout(function(){ console.log("4 sn durdu"); }, 4000);
-	steem.broadcast.vote(ACC_KEY, ACC_NAME, author, memo[5], weight,key, function(err, result) {
- 	console.log('Voted Succesfully, permalink: ' + memo[5] + ', author: ' + author + ', weight: ' + weight / 1000 + '%.', err);
- });
- setInterval(() => {
-  setTimeout(() => {
-    streamVote(
-      "https://steemit.com/life/@bigram13/more-work-more-problems",
-      "0.01 SBD"
-    );
-    console.log("Paid Voting Bot Script Running...");
-    console.log("Waiting For Transfers...");
-    steem.api.streamTransactions("head", function (err, result) {
-      let type = result.operations[0][0];
-      let data = result.operations[0][1];
-      console.log(type, data);
-      if (type == "transfer" && data.to == ACC_NAME) {
-        console.log(
-          "Incoming request for vote from: " +
-            data.from +
-            ", value: " +
-            data.amount +
-            "\n\n"
-        );
-        streamVote(data.memo, data.amount);
-      }
-    });
+	console.log("Paid Voting Bot Script Running...");
+	console.log("Waiting For Transfers...");
+	function streamVote(url, amount) {
+		const memo = url.split('/');
+		// const author = memo[4].split('@')[1];
+		// const weight = calculateVotingWeight(amount);
 
-    function calculateVotingWeight(amountPaid) {
-      const token = amountPaid.split(" "),
-        tokenType = token.pop(),
-        tokenValue = token.shift();
-      let weight;
-      if (tokenValue >= 0.5) {
-        weight = 100;
-      } else if (tokenValue >= 0.1) {
-        weight = 40;
-      } else {
-        weight = 20;
-      }
-      const steemToSbdRatio = 1.1;
-      if (tokenType == "STEEM") {
-        return parseInt(weight * steemToSbdRatio * 500);
-      } else {
-        return weight * 500;
-      }
-    }
+		steem.broadcast.vote(ACC_KEY, ACC_NAME, author, memo[5], weight,key, function(err, result) {
+		console.log('Voted Succesfully, permalink: ' + memo[5] + ', author: ' + author + ', weight: ' + weight / 1000 + '%.', err);
+	 });
 
-    function streamVote(url, amount) {
-      const memo = url.split("/");
-      const author = memo[4].split("@")[1];
-      const weight = calculateVotingWeight(amount);
-      steem.broadcast.vote(
-        ACC_KEY,
-        ACC_NAME,
-        author,
-        memo[5],
-        weight,
-        function (err, result) {
-          console.log(
-            "Voted Succesfully, permalink: " +
-              memo[5] +
-              ", author: " +
-              author +
-              ", weight: " +
-              weight / 1000 +
-              "%.",
-            err
-          );
-        }
-      );
-    }
-  }, 3000);
-}, 5000);
 
 
 // steem.api.streamTransactions('head', function(err, result) {
@@ -391,97 +322,97 @@ function streamVote(url, amount) {
 
 }
  
-   schedule.scheduleJob('42 * * * *'), async () => {
-    try{
-      const alreadyVoted = await hasVotedBy(author,permLink,voter);
-      if(alreadyVoted){
-        console.log("Failed! I already voted the post @%s/%s",author,permLink)
-        return;
-      }
-      const votedAuthor = await hasVotedAuthorToday(author);
-      if(votedAuthor){
-        return;
-      }
+//    schedule.scheduleJob('42 * * * *'), async () => {
+//     try{
+//       const alreadyVoted = await hasVotedBy(author,permLink,voter);
+//       if(alreadyVoted){
+//         console.log("Failed! I already voted the post @%s/%s",author,permLink)
+//         return;
+//       }
+//       const votedAuthor = await hasVotedAuthorToday(author);
+//       if(votedAuthor){
+//         return;
+//       }
       
         
-    }
-    catch (e) {
-      console.error(
-        "Failed when vote @%s/%s with weight = %s%s",
-        author,
-        permLink,
-        weight,
-        e
-      );
-        if (e.jse_shortmsg=="( now - voter.last_vote_time ).to_seconds() >= STEEM_MIN_VOTE_INTERVAL_SEC: Can only vote once every 3 seconds."){
-        const delay_time = new Date(new Date(vote_time).getTime() + 298 * 1000);
-        console.log(
-         "2re try Will vote @%s/%s with weight [%s] at",
-        author,
-        permLink,
-        weight,
-        delay_time
-         );
-        await schedule.scheduleJob(delay_time, async () => {
-          try {
-            await steem.broadcast(
-              "vote",
-              {
-              voter,
-              author,
-              permLink,
-              weight,
-              },
-              VOTE_BOT_KEY
-              );
-            console.log("2retry Voted @%s/%s with weight = %s", author, permLink, weight);
-          }catch (e) {
-            console.error(
-              "Failed when vote @%s/%s with weight = %s",
-              author,
-              permLink,
-              weight,
-              e
-            );
-                if (e.jse_shortmsg=="( now - voter.last_vote_time ).to_seconds() >= STEEM_MIN_VOTE_INTERVAL_SEC: Can only vote once every 3 seconds."){
-                const delay_time = new Date(new Date(vote_time).getTime() + 3 * 1000);
-                console.log(
-                 "3re try Will vote @%s/%s with weight [%s] at",
-                  author,
-                 permLink,
-                    weight,
-                  delay_time
-                 );
-                await schedule.scheduleJob(delay_time, async () => {
-                  try {
-                    await steem.broadcast(
-                      "vote",
-                      {
-                      voter,
-                      author,
-                      permLink,
-                      weight,
-                      },
-                      VOTE_BOT_KEY
-                      );
-                    console.log("3retry Voted @%s/%s with weight = %s", author, permLink, weight);
-                  }catch (e) {
-                    console.error(
-                      "3 Failed when vote @%s/%s with weight = %s",
-                      author,
-                      permLink,
-                      weight,
-                      e
-                    );
-                  }
-                })
-                }
-          }
-        })
-        }
-    }
+//     }
+//     catch (e) {
+//       console.error(
+//         "Failed when vote @%s/%s with weight = %s%s",
+//         author,
+//         permLink,
+//         weight,
+//         e
+//       );
+//         if (e.jse_shortmsg=="( now - voter.last_vote_time ).to_seconds() >= STEEM_MIN_VOTE_INTERVAL_SEC: Can only vote once every 3 seconds."){
+//         const delay_time = new Date(new Date(vote_time).getTime() + 298 * 1000);
+//         console.log(
+//          "2re try Will vote @%s/%s with weight [%s] at",
+//         author,
+//         permLink,
+//         weight,
+//         delay_time
+//          );
+//         await schedule.scheduleJob(delay_time, async () => {
+//           try {
+//             await steem.broadcast(
+//               "vote",
+//               {
+//               voter,
+//               author,
+//               permLink,
+//               weight,
+//               },
+//               VOTE_BOT_KEY
+//               );
+//             console.log("2retry Voted @%s/%s with weight = %s", author, permLink, weight);
+//           }catch (e) {
+//             console.error(
+//               "Failed when vote @%s/%s with weight = %s",
+//               author,
+//               permLink,
+//               weight,
+//               e
+//             );
+//                 if (e.jse_shortmsg=="( now - voter.last_vote_time ).to_seconds() >= STEEM_MIN_VOTE_INTERVAL_SEC: Can only vote once every 3 seconds."){
+//                 const delay_time = new Date(new Date(vote_time).getTime() + 3 * 1000);
+//                 console.log(
+//                  "3re try Will vote @%s/%s with weight [%s] at",
+//                   author,
+//                  permLink,
+//                     weight,
+//                   delay_time
+//                  );
+//                 await schedule.scheduleJob(delay_time, async () => {
+//                   try {
+//                     await steem.broadcast(
+//                       "vote",
+//                       {
+//                       voter,
+//                       author,
+//                       permLink,
+//                       weight,
+//                       },
+//                       VOTE_BOT_KEY
+//                       );
+//                     console.log("3retry Voted @%s/%s with weight = %s", author, permLink, weight);
+//                   }catch (e) {
+//                     console.error(
+//                       "3 Failed when vote @%s/%s with weight = %s",
+//                       author,
+//                       permLink,
+//                       weight,
+//                       e
+//                     );
+//                   }
+//                 })
+//                 }
+//           }
+//         })
+//         }
+//     }
 
-  }
+//   }
 }
 async function voteBotActivity(){
   const list = await getDelegatorInfo();
